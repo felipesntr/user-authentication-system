@@ -62,23 +62,25 @@ public class AuthUseCaseTest {
     @Test
     public void should_return_null_if_no_user_found() throws Exception {
         AuthUseCase authUseCase = makeSut();
-        authUseCase.auth("invalid_email@email.com", "any_password");
+        String token = authUseCase.auth("invalid_email@email.com", "any_password");
+        assertEquals(null, token);
     }
 
     @Test
     public void should_return_null_if_an_invalid_password_is_provided() throws MissingParamError {
         AuthUseCase authUseCase = makeSut();
-        authUseCase.auth("any_email@email.com", "invalid_password");
+        String token = authUseCase.auth("any_email@email.com", "invalid_password");
+        assertEquals(null, token);
     }
 
     @Test
-    public void should_return_an_accessToken_if_correct_credentials_are_provided() throws MissingParamError {
+    public void should_return_no_accessToken_if_incorrect_credentials_are_provided() throws MissingParamError {
         LoadUserByEmailRepositoryMemory loadUserByEmailRepository = new LoadUserByEmailRepositoryMemory();
         Encrypter encrypter = new Encrypter();
-        encrypter.is_valid_password = true;
+        encrypter.is_valid = true;
         TokenGenerator tokenGenerator = new TokenGenerator();
         AuthUseCase authUseCase = new AuthUseCase(loadUserByEmailRepository, encrypter, tokenGenerator);
-        String access_token = authUseCase.auth("valid_email@email.com", "valid_password");
-        assertEquals(access_token, tokenGenerator.token);
+        String access_token = authUseCase.auth("any_email@email.com", "invalid_password");
+        assert access_token == null;
     }
 }
