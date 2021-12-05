@@ -26,10 +26,9 @@ public class AuthUseCase {
         if (password == "")
             throw new MissingParamError("password");
         User user = loadUserByEmailRepository.load(email);
-        if (user == null)
-            return null;
-        if (!this.encrypter.compare(user.getPassword(), password))
-            return null;
-        return tokenGenerator.generate(user.getId());
+        boolean is_valid = user != null && encrypter.compare(user.getPassword(), password);
+        if (is_valid)
+            return tokenGenerator.generate(user.getId());
+        return null;
     }
 }
