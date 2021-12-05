@@ -9,6 +9,8 @@ import core.entity.User;
 import core.repository.LoadUserByEmailRepository;
 
 import utils.errors.MissingParamError;
+import utils.helpers.Encrypter;
+import utils.helpers.TokenGenerator;
 
 public class AuthUseCaseTest {
     class LoadUserByEmailRepositoryMemory implements LoadUserByEmailRepository {
@@ -30,7 +32,11 @@ public class AuthUseCaseTest {
 
         @Override
         public User load(String email) {
-            // TODO Auto-generated method stub
+            for (User user : users) {
+                if (user.getEmail().equals(email)) {
+                    return user;
+                }
+            }
             return null;
         }
 
@@ -38,9 +44,17 @@ public class AuthUseCaseTest {
 
     class AuthUseCase {
         LoadUserByEmailRepository loadUserByEmailRepository;
+        Encrypter encrypter;
+        TokenGenerator tokenGenerator;
 
-        public AuthUseCase(LoadUserByEmailRepository loadUserByEmailRepository) {
+        public AuthUseCase(
+                LoadUserByEmailRepository loadUserByEmailRepository,
+                Encrypter encrypter,
+                TokenGenerator tokenGenerator) {
+                ) {
             this.loadUserByEmailRepository = loadUserByEmailRepository;
+            this.encrypter = encrypter;
+            this.tokenGenerator = tokenGenerator;
         }
 
         public String auth(String email, String password) throws MissingParamError {
@@ -48,12 +62,17 @@ public class AuthUseCaseTest {
                 throw new MissingParamError("email");
             if (password == "")
                 throw new MissingParamError("password");
-            return "";
+            User user = loadUserByEmailRepository.load(email);
+            if (user == null)
+                return null;
+            if (!this.encrypter.compare(user.getPassword(), password))
+                return null;
+            return tokenGenerator.generate(user.getId());
         }
     }
 
     public AuthUseCase makeSut() {
-        return new AuthUseCase(new LoadUserByEmailRepositoryMemory());
+        return new AuthUseCase(new LoadUserByEmailRepositoryMemory(), new Encrypter(), new TokenGenerator());
     }
 
     @Test(expected = MissingParamError.class)
@@ -72,5 +91,11 @@ public class AuthUseCaseTest {
     public void should_return_null_if_no_user_found() throws Exception {
         AuthUseCase authUseCase = makeSut();
         authUseCase.auth("invalid_email@email.com", "any_password");
+    }
+
+    @Test
+    public void should_return_null_if_an_invalid_password_is_provided() throws Exception {
+        AuthUseCase authUseCase = makeSut();
+        authUseCase.auth("any_email@email.com", "invalid_password");
     }
 }
