@@ -30,4 +30,15 @@ public class User {
         this.status = status;
     }
 
+    public String getPassword() {
+        return password;
+    }
+
+    public String getEmail() {
+        return email;
+    }
+
+    public String getId() {
+        return id;
+    }
 }
